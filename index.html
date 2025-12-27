@@ -39,7 +39,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- 아이콘 컴포넌트 (Lucide 아이콘을 SVG로 직접 구현하여 오류 방지) ---
+        // --- 아이콘 컴포넌트 ---
         const IconBase = ({ children, size = 20, className = "" }) => (
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -57,7 +57,7 @@
             </svg>
         );
 
-        const Plane = (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2a22 22 0 0 0-8.8 8.8"/><path d="M11 22a22 22 0 0 1 8.8-8.8"/><path d="M22 12h-5"/></IconBase>;
+        const Plane = (props) => <IconBase {...props}><rect x="2" y="10" width="20" height="4" rx="2" /><path d="M8 10l4-7"/><path d="M8 14l4 7"/><path d="M17 10l3-5"/></IconBase>;
         const MapPin = (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>;
         const Utensils = (props) => <IconBase {...props}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconBase>;
         const Camera = (props) => <IconBase {...props}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconBase>;
@@ -72,18 +72,23 @@
         const CalendarDays = (props) => <IconBase {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></IconBase>;
         const Train = (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h0"/><path d="M16 15h0"/></IconBase>;
         const CreditCard = (props) => <IconBase {...props}><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></IconBase>;
+        const Edit = (props) => <IconBase {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
+        const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
+        const X = (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
 
         // --- 메인 App 컴포넌트 ---
         function App() {
             const [activeTab, setActiveTab] = useState('itinerary'); 
             const [selectedDay, setSelectedDay] = useState(1);
             const [newItemText, setNewItemText] = useState('');
+            const [editingId, setEditingId] = useState(null);
+            const [editText, setEditText] = useState('');
 
             // 초기 데이터
             const initialItinerary = {
                 1: [
-                { id: 101, time: '07:00', text: '인천공항 출발', checked: false, type: 'move' },
-                { id: 102, time: '08:40', text: '마쓰야마 공항 도착', checked: false, type: 'move' },
+                { id: 101, time: '07:00', text: '인천공항 출발', checked: false, type: 'plane' },
+                { id: 102, time: '08:40', text: '마쓰야마 공항 도착', checked: false, type: 'plane' },
                 { id: 103, time: '09:30', text: '공항 리무진 탑승 → 오카이도 하차', checked: false, type: 'move' },
                 { id: 104, time: '10:10', text: '뉴 그랜드 호텔 짐 보관', checked: false, type: 'hotel' },
                 { id: 105, time: '11:30', text: '[점심] 도미솥밥 (아키요시 or 고시키)', checked: false, type: 'food' },
@@ -191,6 +196,28 @@
                     [day]: prev[day].filter(item => item.id !== id)
                 }));
                 }
+            };
+
+            const startEdit = (item) => {
+                setEditingId(item.id);
+                setEditText(item.text);
+            };
+
+            const saveEdit = (day) => {
+                if (!editText.trim()) return;
+                setItinerary(prev => ({
+                    ...prev,
+                    [day]: prev[day].map(item => 
+                        item.id === editingId ? { ...item, text: editText } : item
+                    )
+                }));
+                setEditingId(null);
+                setEditText('');
+            };
+
+            const cancelEdit = () => {
+                setEditingId(null);
+                setEditText('');
             };
 
             const addItem = () => {
@@ -306,24 +333,54 @@
                                 {item.checked ? <CheckCircle2 size={22} /> : <Circle size={22} />}
                                 </button>
                                 
-                                <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${item.checked ? 'bg-gray-200 text-gray-400' : 'bg-orange-50 text-orange-600'}`}>
-                                    {item.time}
-                                    </span>
-                                    {getIcon(item.type)}
-                                </div>
-                                <p className={`text-sm font-medium ${item.checked ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}>
-                                    {item.text}
-                                </p>
-                                </div>
+                                {editingId === item.id ? (
+                                    <div className="flex-1 flex gap-2 items-center">
+                                        <input 
+                                            type="text" 
+                                            value={editText}
+                                            onChange={(e) => setEditText(e.target.value)}
+                                            className="flex-1 px-2 py-1 text-sm border border-orange-300 rounded focus:outline-none focus:ring-1 focus:ring-orange-500 bg-orange-50"
+                                            autoFocus
+                                        />
+                                        <button onClick={() => saveEdit(selectedDay)} className="text-green-500 hover:bg-green-50 p-1 rounded transition-colors">
+                                            <Check size={20} />
+                                        </button>
+                                        <button onClick={cancelEdit} className="text-gray-400 hover:bg-gray-100 p-1 rounded transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${item.checked ? 'bg-gray-200 text-gray-400' : 'bg-orange-50 text-orange-600'}`}>
+                                                {item.time}
+                                                </span>
+                                                {getIcon(item.type)}
+                                            </div>
+                                            <p className={`text-sm font-medium ${item.checked ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-800'}`}>
+                                                {item.text}
+                                            </p>
+                                        </div>
 
-                                <button 
-                                onClick={() => deleteItem(selectedDay, item.id)}
-                                className="text-gray-300 hover:text-red-400"
-                                >
-                                <Trash2 size={16} />
-                                </button>
+                                        <div className="flex flex-col gap-1 sm:flex-row sm:gap-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => startEdit(item)}
+                                                className="text-gray-300 hover:text-blue-400 p-1"
+                                                title="수정"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button 
+                                                onClick={() => deleteItem(selectedDay, item.id)}
+                                                className="text-gray-300 hover:text-red-400 p-1"
+                                                title="삭제"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             ))}
                         </div>
